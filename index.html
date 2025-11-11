@@ -3,69 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <title>MP3 → MIDI Converter</title>
-  <!-- Load jsmidgen first -->
-  <script src="https://cdn.jsdelivr.net/npm/jsmidgen@1.1.2/build/jasmidgen.js"></script>
-  <!-- Your script -->
+  <script src="js/jasmidgen.js"></script>
   <script defer src="script.js"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 2em;
-      background: #fafafa;
-    }
-
-    input, button {
-      margin: 0.5em;
-      padding: 0.5em 1em;
-      font-size: 1em;
-    }
-
-    #progressContainer {
-      width: 80%;
-      height: 20px;
-      background: #eee;
-      margin: 1em auto;
-      border-radius: 10px;
-      overflow: hidden;
-      display: none;
-    }
-
-    #progressBar {
-      width: 0%;
-      height: 100%;
-      background: #4caf50;
-      transition: width 0.1s linear;
-    }
-
-    #status {
-      font-weight: bold;
-      margin-top: 1em;
-    }
+    body { font-family: sans-serif; text-align: center; padding: 2em; background: #fafafa; }
+    input, button { margin: 0.5em; padding: 0.5em 1em; font-size: 1em; }
+    #progressContainer { width: 80%; height: 20px; background: #eee; margin: 1em auto; border-radius: 10px; overflow: hidden; display: none; }
+    #progressBar { width: 0%; height: 100%; background: #4caf50; transition: width 0.1s linear; }
+    #status { font-weight: bold; margin-top: 1em; }
   </style>
 </head>
 <body>
   <h1>MP3 → MIDI Converter</h1>
-
   <input type="file" id="fileInput" accept=".mp3">
   <input type="number" id="numNotes" value="10" min="2" max="128">
   <button id="convertBtn">Convert</button>
-
-  <div id="progressContainer">
-    <div id="progressBar"></div>
-  </div>
-
+  <div id="progressContainer"><div id="progressBar"></div></div>
   <p id="status"></p>
-
-  <!-- Optional debug log -->
   <p id="log">Page loaded, waiting for scripts...</p>
   <script>
-    // Quick check to see if jsmidgen is loaded
-    if (window.JSMIDGEN) {
-      document.getElementById('log').textContent = "JSMIDGEN is already loaded.";
-    } else {
-      document.getElementById('log').textContent = "Waiting for JSMIDGEN to load...";
-    }
+    document.getElementById('log').textContent = window.JSMIDGEN ? "JSMIDGEN loaded locally" : "JSMIDGEN missing!";
   </script>
 </body>
 </html>
