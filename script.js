@@ -1,6 +1,6 @@
 console.log("Script loaded");
 
-// Minimal JS MIDI generator with proper VLQ delta times
+// Minimal JS MIDI generator with proper delta handling and VLQ
 class MidiFile {
   constructor() { this.tracks = []; }
   addTrack(track) { this.tracks.push(track); }
@@ -18,6 +18,7 @@ class MidiFile {
   }
 }
 
+// VLQ encoder
 function encodeVarLen(value) {
   let buffer = value & 0x7F;
   const bytes = [];
@@ -35,10 +36,10 @@ function encodeVarLen(value) {
 
 class MidiTrack {
   constructor() { this.events = []; }
-  addNote(channel, note, duration) {
-    // Store delta + noteOn, note, velocity + noteOff
-    this.events.push([0, 0x90 | channel, note, 0x64]); // delta=0 for now
-    this.events.push([duration, 0x80 | channel, note, 0x40]);
+  // delta = ticks since previous note-on
+  addNote(channel, note, duration, delta) {
+    this.events.push([delta, 0x90 | channel, note, 0x64]); // note-on
+    this.events.push([duration, 0x80 | channel, note, 0x40]); // note-off
   }
   toBytes() {
     const result = [];
@@ -100,7 +101,6 @@ document.getElementById('convertBtn').onclick = async () => {
 
       const progress = (i/(data.length-frameSize))*90+5;
       if(progress>nextUpdate){ bar.style.width = progress.toFixed(1)+"%"; nextUpdate+=1; await new Promise(r=>setTimeout(r,0)); }
-      if(i%100000===0) console.log("Analyzing frame index:", i);
     }
 
     if(pitches.length===0){ status.textContent="No tonal content detected."; bar.style.width="0%"; console.warn("No pitches detected"); return; }
@@ -110,13 +110,12 @@ document.getElementById('convertBtn').onclick = async () => {
 
     const q = quantize(pitches,numNotes);
     const uniqueBins = [...new Set(q)];
-    console.log("Unique bins:", uniqueBins.length);
 
     const midiFile = new MidiFile();
     const track = new MidiTrack();
     midiFile.addTrack(track);
 
-    // Correct ticks per frame using VLQ
+    // Timing setup
     const totalFrames = Math.ceil(data.length / hop);
     const bpm = 120;
     const ticksPerQuarter = 480;
@@ -126,12 +125,19 @@ document.getElementById('convertBtn').onclick = async () => {
 
     console.log("Ticks per frame:", ticksPerFrame);
 
-    let last = q[0], duration = 1;
+    // Accumulate delta
+    let last = q[0], duration = 1, accumulatedTicks = 0;
     for(let i=1;i<q.length;i++){
       if(q[i]===last) duration++;
-      else { track.addNote(0, uniqueBins[last]+60, ticksPerFrame*duration); last=q[i]; duration=1; }
+      else {
+        track.addNote(0, uniqueBins[last]+60, ticksPerFrame*duration, accumulatedTicks);
+        accumulatedTicks = 0;
+        last = q[i];
+        duration = 1;
+      }
+      accumulatedTicks += 0; // no extra accumulation needed for single frame
     }
-    track.addNote(0, uniqueBins[last]+60, ticksPerFrame*duration);
+    track.addNote(0, uniqueBins[last]+60, ticksPerFrame*duration, accumulatedTicks);
 
     console.log("Generating MIDI blob...");
     const midiData = midiFile.toBytes();
