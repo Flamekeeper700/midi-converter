@@ -5,7 +5,7 @@ class MidiFile {
   constructor() { this.tracks = []; }
   addTrack(track) { this.tracks.push(track); }
   toBytes() {
-    const header = [0x4d,0x54,0x68,0x64, 0x00,0x00,0x00,0x06, 0x00,0x01, 0x00,this.tracks.length, 0x00,0x60];
+    const header = [0x4d,0x54,0x68,0x64, 0x00,0x00,0x00,0x06, 0x00,0x01, 0x00,this.tracks.length, 0x01,0xe0]; // 480 ticks per quarter
     let bytes = [...header];
     for(const t of this.tracks) bytes.push(...t.toBytes());
     return bytes.map(b=>String.fromCharCode(b)).join('');
@@ -15,8 +15,8 @@ class MidiFile {
 class MidiTrack {
   constructor() { this.events = []; }
   addNote(channel, note, duration) {
-    this.events.push(0x00, 0x90 | channel, note, 0x64);
-    this.events.push(duration, 0x80 | channel, note, 0x40);
+    this.events.push(0x00, 0x90 | channel, note, 0x64); // note on
+    this.events.push(duration, 0x80 | channel, note, 0x40); // note off
   }
   toBytes() {
     const data = [...this.events];
@@ -43,6 +43,7 @@ function quantize(values, numBins) {
 document.getElementById('convertBtn').onclick = async () => {
   const file = document.getElementById('fileInput').files[0];
   const numNotes = parseInt(document.getElementById('numNotes').value);
+  const speed = parseFloat(document.getElementById('speed').value) || 1;
   const status = document.getElementById('status');
   const bar = document.getElementById('progressBar');
   const container = document.getElementById('progressContainer');
@@ -81,6 +82,7 @@ document.getElementById('convertBtn').onclick = async () => {
 
     status.textContent="Building MIDI…";
     bar.style.width="95%";
+
     const q = quantize(pitches,numNotes);
     const uniqueBins = [...new Set(q)];
     console.log("Unique bins:", uniqueBins.length);
@@ -89,12 +91,20 @@ document.getElementById('convertBtn').onclick = async () => {
     const track = new MidiTrack();
     midiFile.addTrack(track);
 
+    // Compute ticks per frame to match song duration
+    const totalFrames = Math.ceil(data.length / hop);
+    const desiredSeconds = data.length / sampleRate / speed;
+    const bpm = 120;
+    const ticksPerQuarter = 480;
+    const secondsPerTick = 60 / (bpm * ticksPerQuarter);
+    const ticksPerFrame = Math.max(1, Math.round((desiredSeconds / totalFrames) / secondsPerTick));
+
     let last = q[0], duration = 1;
     for(let i=1;i<q.length;i++){
       if(q[i]===last) duration++;
-      else{ track.addNote(0, uniqueBins[last]+60, duration); last=q[i]; duration=1; }
+      else { track.addNote(0, uniqueBins[last]+60, ticksPerFrame*duration); last=q[i]; duration=1; }
     }
-    track.addNote(0, uniqueBins[last]+60, duration);
+    track.addNote(0, uniqueBins[last]+60, ticksPerFrame*duration);
 
     console.log("Generating MIDI blob...");
     const midiData = midiFile.toBytes();
