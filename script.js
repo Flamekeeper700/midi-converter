@@ -90,12 +90,15 @@ document.getElementById('convertBtn').onclick = async () => {
     const track = new MidiTrack();
     midiFile.addTrack(track);
 
-    // Compute ticks per frame to match song duration
+    // Correct ticks per frame for proper song duration
     const totalFrames = Math.ceil(data.length / hop);
     const bpm = 120;
     const ticksPerQuarter = 480;
-    const totalTicks = ticksPerQuarter * bpm * (data.length / sampleRate) / 60;
-    const ticksPerFrame = Math.max(1, Math.floor(totalTicks / totalFrames));
+    const songSeconds = data.length / sampleRate;
+    const secondsPerTick = 60 / bpm / ticksPerQuarter; // seconds per MIDI tick
+    const ticksPerFrame = Math.max(1, Math.round((songSeconds / totalFrames) / secondsPerTick));
+
+    console.log("Ticks per frame:", ticksPerFrame);
 
     let last = q[0], duration = 1;
     for(let i=1;i<q.length;i++){
