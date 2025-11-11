@@ -69,7 +69,7 @@ document.getElementById('convertBtn').onclick = async () => {
     const q = quantize(pitches, numNotes);
     const uniqueBins = [...new Set(q)];
 
-    // Create MIDI file using jsmidgen
+    // Build MIDI file using jsmidgen
     const fileMidi = new JSMIDGEN.File();
     const track = new JSMIDGEN.Track();
     fileMidi.addTrack(track);
