@@ -43,7 +43,6 @@ function quantize(values, numBins) {
 document.getElementById('convertBtn').onclick = async () => {
   const file = document.getElementById('fileInput').files[0];
   const numNotes = parseInt(document.getElementById('numNotes').value);
-  const speed = parseFloat(document.getElementById('speed').value) || 1;
   const status = document.getElementById('status');
   const bar = document.getElementById('progressBar');
   const container = document.getElementById('progressContainer');
@@ -93,11 +92,10 @@ document.getElementById('convertBtn').onclick = async () => {
 
     // Compute ticks per frame to match song duration
     const totalFrames = Math.ceil(data.length / hop);
-    const desiredSeconds = data.length / sampleRate / speed;
     const bpm = 120;
     const ticksPerQuarter = 480;
-    const secondsPerTick = 60 / (bpm * ticksPerQuarter);
-    const ticksPerFrame = Math.max(1, Math.round((desiredSeconds / totalFrames) / secondsPerTick));
+    const totalTicks = ticksPerQuarter * bpm * (data.length / sampleRate) / 60;
+    const ticksPerFrame = Math.max(1, Math.floor(totalTicks / totalFrames));
 
     let last = q[0], duration = 1;
     for(let i=1;i<q.length;i++){
