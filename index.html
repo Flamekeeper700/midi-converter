@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MP3 to Simplified MIDI</title>
+  <script src="https://cdn.jsdelivr.net/npm/tone@next"></script>
+  <script src="https://cdn.jsdelivr.net/npm/midi-writer-js@2.1.4"></script>
+  <script defer src="script.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2em; }
+    input, button { margin: 1em; padding: 0.5em; font-size: 1em; }
+  </style>
+</head>
+<body>
+  <h1>MP3 → Simplified MIDI Converter</h1>
+  <input type="file" id="fileInput" accept=".mp3">
+  <input type="number" id="numNotes" value="10" min="2" max="128">
+  <button id="convertBtn">Convert</button>
+  <p id="status"></p>
+</body>
+</html>
