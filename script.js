@@ -27,7 +27,7 @@ document.getElementById('convertBtn').onclick = async () => {
   container.style.display = "block";
   bar.style.width = "0%";
   status.textContent = "Preparing…";
-  await new Promise(r => setTimeout(r, 50));
+  await new Promise(r => setTimeout(r, 50)); // let DOM render
 
   try {
     status.textContent = "Decoding audio…";
@@ -40,7 +40,6 @@ document.getElementById('convertBtn').onclick = async () => {
     const hop = 1024;
     const sampleRate = buffer.sampleRate;
     const pitches = [];
-    const totalFrames = Math.floor((data.length - frameSize) / hop);
     let nextUpdate = 0;
 
     for (let i = 0; i < data.length - frameSize; i += hop) {
@@ -54,7 +53,7 @@ document.getElementById('convertBtn').onclick = async () => {
       if (progress > nextUpdate) {
         bar.style.width = progress.toFixed(1) + "%";
         nextUpdate += 1;
-        await new Promise(r => setTimeout(r, 0));
+        await new Promise(r => setTimeout(r, 0)); // yield to render
       }
     }
 
@@ -70,7 +69,7 @@ document.getElementById('convertBtn').onclick = async () => {
     const q = quantize(pitches, numNotes);
     const uniqueBins = [...new Set(q)];
 
-    // Build MIDI using jsmidgen (browser-safe)
+    // Build MIDI using jsmidgen
     const fileMidi = new JSMIDGEN.File();
     const track = new JSMIDGEN.Track();
     fileMidi.addTrack(track);
@@ -85,6 +84,9 @@ document.getElementById('convertBtn').onclick = async () => {
         duration = 1;
       }
     }
+
+    // Add last note
+    track.addNote(0, uniqueBins[last] + 60, duration);
 
     const midiData = fileMidi.toBytes();
     const blob = new Blob([new Uint8Array(midiData.split('').map(c => c.charCodeAt(0)))], { type: 'audio/midi' });
