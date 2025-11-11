@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>MP3 to Simplified MIDI</title>
-  <script src="https://cdn.jsdelivr.net/npm/tone@next"></script>
-  <script src="https://cdn.jsdelivr.net/npm/midi-writer-js@2.1.4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/TonejsMidi.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsmidgen@1.1.2/build/jasmidgen.js"></script>
   <script defer src="script.js"></script>
   <style>
     body {
@@ -25,7 +25,7 @@
       margin: 1em auto;
       border-radius: 10px;
       overflow: hidden;
-      display: none; /* hidden until used */
+      display: none;
     }
     #progressBar {
       width: 0%;
