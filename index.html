@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MP3 to Simplified MIDI</title>
-  <!-- jsmidgen: browser-compatible UMD -->
+  <title>MP3 → Simplified MIDI Converter</title>
+  <!-- jsmidgen (browser-safe UMD build) -->
   <script src="https://cdn.jsdelivr.net/npm/jsmidgen@1.1.2/build/jasmidgen.js"></script>
+  <!-- your script -->
   <script defer src="script.js"></script>
   <style>
     body {
@@ -13,11 +14,13 @@
       padding: 2em;
       background: #fafafa;
     }
+
     input, button {
       margin: 0.5em;
       padding: 0.5em 1em;
       font-size: 1em;
     }
+
     #progressContainer {
       width: 80%;
       height: 20px;
@@ -27,6 +30,7 @@
       overflow: hidden;
       display: none;
     }
+
     #progressBar {
       width: 0%;
       height: 100%;
@@ -37,6 +41,7 @@
 </head>
 <body>
   <h1>MP3 → Simplified MIDI Converter</h1>
+  
   <input type="file" id="fileInput" accept=".mp3">
   <input type="number" id="numNotes" value="10" min="2" max="128">
   <button id="convertBtn">Convert</button>
@@ -44,6 +49,7 @@
   <div id="progressContainer">
     <div id="progressBar"></div>
   </div>
+
   <p id="status"></p>
 </body>
 </html>
