@@ -9,6 +9,8 @@
   <style>
     body { font-family: sans-serif; text-align: center; padding: 2em; }
     input, button { margin: 1em; padding: 0.5em; font-size: 1em; }
+    #progressContainer { width: 80%; height: 20px; background: #eee; margin: 1em auto; border-radius: 10px; overflow: hidden; }
+    #progressBar { width: 0%; height: 100%; background: #4caf50; transition: width 0.1s linear; }
   </style>
 </head>
 <body>
@@ -16,6 +18,7 @@
   <input type="file" id="fileInput" accept=".mp3">
   <input type="number" id="numNotes" value="10" min="2" max="128">
   <button id="convertBtn">Convert</button>
+  <div id="progressContainer"><div id="progressBar"></div></div>
   <p id="status"></p>
 </body>
 </html>

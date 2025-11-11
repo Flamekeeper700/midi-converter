@@ -15,44 +15,55 @@ async function getAudioBuffer(file) {
     const file = document.getElementById('fileInput').files[0];
     const numNotes = parseInt(document.getElementById('numNotes').value);
     const status = document.getElementById('status');
+    const bar = document.getElementById('progressBar');
     if (!file) return alert("Select an MP3 first.");
   
-    status.textContent = "Processing audio…";
+    status.textContent = "Decoding audio…";
+    bar.style.width = "0%";
   
     const buffer = await getAudioBuffer(file);
     const data = buffer.getChannelData(0);
   
-    // crude pitch estimate (FFT magnitude peaks)
+    // Processing setup
     const frameSize = 2048;
     const hop = 1024;
     const sampleRate = buffer.sampleRate;
     const pitches = [];
+    const totalFrames = Math.floor((data.length - frameSize) / hop);
+    let nextUpdate = 0;
+  
+    status.textContent = "Extracting pitches…";
+  
     for (let i = 0; i < data.length - frameSize; i += hop) {
       const frame = data.slice(i, i + frameSize);
-      const fft = new Float32Array(frameSize);
-      const re = new Float32Array(frameSize);
-      for (let j = 0; j < frameSize; j++) re[j] = frame[j];
-      const mag = re.map(v => Math.abs(v));
+      // Simple magnitude spectrum to find peak
+      const mag = frame.map(v => Math.abs(v));
       const maxIdx = mag.indexOf(Math.max(...mag));
       const freq = maxIdx * (sampleRate / frameSize);
       if (freq > 50 && freq < 2000) pitches.push(69 + 12 * Math.log2(freq / 440));
+  
+      const progress = (i / (data.length - frameSize)) * 100;
+      if (progress > nextUpdate) {
+        bar.style.width = progress.toFixed(1) + "%";
+        nextUpdate += 1; // update every ~1%
+        await new Promise(r => setTimeout(r, 0)); // yield to render
+      }
     }
   
     if (pitches.length === 0) {
       status.textContent = "No tonal content detected.";
+      bar.style.width = "0%";
       return;
     }
   
-    // quantize into N bins
+    status.textContent = "Building MIDI…";
     const q = quantize(pitches, numNotes);
     const uniqueBins = [...new Set(q)];
   
-    // Build MIDI
     const { Track, Writer, NoteEvent } = window.MidiWriter;
     const track = new Track();
     let last = q[0];
     let duration = 1;
-  
     for (let i = 1; i < q.length; i++) {
       if (q[i] === last) duration++;
       else {
@@ -70,6 +81,7 @@ async function getAudioBuffer(file) {
     a.download = file.name.replace(/\.mp3$/i, '.mid');
     a.click();
   
+    bar.style.width = "100%";
     status.textContent = "Done. MIDI downloaded.";
   };
   
