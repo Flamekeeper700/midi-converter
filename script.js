@@ -1,28 +1,54 @@
 console.log("Script loaded");
 
-// Minimal JS MIDI generator
+// Minimal JS MIDI generator with proper VLQ delta times
 class MidiFile {
   constructor() { this.tracks = []; }
   addTrack(track) { this.tracks.push(track); }
   toBytes() {
-    const header = [0x4d,0x54,0x68,0x64, 0x00,0x00,0x00,0x06, 0x00,0x01, 0x00,this.tracks.length, 0x01,0xe0]; // 480 ticks per quarter
+    const header = [
+      0x4d,0x54,0x68,0x64, // MThd
+      0x00,0x00,0x00,0x06, // header length
+      0x00,0x01,           // format 1
+      0x00,this.tracks.length, // number of tracks
+      0x01,0xe0              // ticks per quarter = 480
+    ];
     let bytes = [...header];
     for(const t of this.tracks) bytes.push(...t.toBytes());
     return bytes.map(b=>String.fromCharCode(b)).join('');
   }
 }
 
+function encodeVarLen(value) {
+  let buffer = value & 0x7F;
+  const bytes = [];
+  while ((value >>= 7) > 0) {
+    buffer <<= 8;
+    buffer |= ((value & 0x7F) | 0x80);
+  }
+  while (true) {
+    bytes.push(buffer & 0xFF);
+    if (buffer & 0x80) buffer >>= 8;
+    else break;
+  }
+  return bytes;
+}
+
 class MidiTrack {
   constructor() { this.events = []; }
   addNote(channel, note, duration) {
-    this.events.push(0x00, 0x90 | channel, note, 0x64); // note on
-    this.events.push(duration, 0x80 | channel, note, 0x40); // note off
+    // Store delta + noteOn, note, velocity + noteOff
+    this.events.push([0, 0x90 | channel, note, 0x64]); // delta=0 for now
+    this.events.push([duration, 0x80 | channel, note, 0x40]);
   }
   toBytes() {
-    const data = [...this.events];
-    const len = data.length;
+    const result = [];
+    for(const e of this.events){
+      const deltaBytes = encodeVarLen(e[0]);
+      result.push(...deltaBytes, e[1], e[2], e[3]);
+    }
+    const len = result.length;
     const header = [0x4d,0x54,0x72,0x6b, (len>>24)&0xff,(len>>16)&0xff,(len>>8)&0xff,len&0xff];
-    return [...header,...data];
+    return [...header,...result];
   }
 }
 
@@ -90,12 +116,12 @@ document.getElementById('convertBtn').onclick = async () => {
     const track = new MidiTrack();
     midiFile.addTrack(track);
 
-    // Correct ticks per frame for proper song duration
+    // Correct ticks per frame using VLQ
     const totalFrames = Math.ceil(data.length / hop);
     const bpm = 120;
     const ticksPerQuarter = 480;
     const songSeconds = data.length / sampleRate;
-    const secondsPerTick = 60 / bpm / ticksPerQuarter; // seconds per MIDI tick
+    const secondsPerTick = 60 / bpm / ticksPerQuarter;
     const ticksPerFrame = Math.max(1, Math.round((songSeconds / totalFrames) / secondsPerTick));
 
     console.log("Ticks per frame:", ticksPerFrame);
